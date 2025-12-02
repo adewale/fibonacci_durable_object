@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Hello, World!</title>
+	</head>
+	<body>
+		<h1 id="current"></h1>
+		<p id="previous" style="font-size: 0.8em; color: #666;"></p>
+		<script>
+			fetch('/message')
+				.then((resp) => resp.json())
+				.then((data) => {
+					const currentEl = document.getElementById('current');
+					const previousEl = document.getElementById('previous');
+					
+					// Display current counter and location
+					currentEl.textContent = `Counter: ${data.current.counter} | Location: ${data.current.location.city}, ${data.current.location.region}, ${data.current.location.country}`;
+					
+					// Display previous counter and location if available
+					if (data.previous) {
+						previousEl.textContent = `Previous - Counter: ${data.previous.counter} | Location: ${data.previous.location.city}, ${data.previous.location.region}, ${data.previous.location.country}`;
+					} else {
+						previousEl.textContent = 'No previous data';
+					}
+				});
+		</script>
+	</body>
+</html>

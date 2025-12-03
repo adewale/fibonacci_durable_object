@@ -1,7 +1,8 @@
 {
-	"name": "durable-object-starter",
-	"version": "0.0.0",
+	"name": "fibonacci-durable-object",
+	"version": "1.0.0",
 	"private": true,
+	"description": "A Cloudflare Durable Object that tracks Fibonacci sequence counter with location history",
 	"scripts": {
 		"deploy": "wrangler deploy",
 		"dev": "wrangler dev",

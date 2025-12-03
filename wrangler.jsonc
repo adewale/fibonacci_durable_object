@@ -4,13 +4,13 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "durable-object-starter",
+	"name": "fibonacci-durable-object",
 	"main": "src/index.ts",
 	"compatibility_date": "2025-12-02",
 	"migrations": [
 		{
 			"new_sqlite_classes": [
-				"MyDurableObject"
+				"FibonacciDurableObject"
 			],
 			"tag": "v1"
 		}
@@ -22,7 +22,7 @@
 	"durable_objects": {
 		"bindings": [
 			{
-				"class_name": "MyDurableObject",
+				"class_name": "FibonacciDurableObject",
 				"name": "MY_DURABLE_OBJECT"
 			}
 		]

@@ -28,6 +28,7 @@ interface LocationInfo {
 interface StoredData {
 	counter: number;
 	location: LocationInfo;
+	timestamp: number;
 }
 
 interface ResponseData {
@@ -37,11 +38,6 @@ interface ResponseData {
 
 /** A Durable Object's behavior is defined in an exported Javascript class */
 export class MyDurableObject extends DurableObject {
-	private previous_counter = 1;
-	private counter: number = 2;
-	private location: LocationInfo | null = null;
-	private previousLocation: LocationInfo | null = null;
-
 	/**
 	 * The constructor is invoked once upon creation of the Durable Object, i.e. the first call to
 	 * 	`DurableObjectStub::get` for a given identifier (no-op constructors can be omitted)
@@ -59,27 +55,39 @@ export class MyDurableObject extends DurableObject {
 	 * @returns The stored data including current and previous counter/location
 	 */
 	async getCounter(locationInfo: LocationInfo): Promise<ResponseData> {
-		// Store previous data before updating
-		const previousData: StoredData | null = this.location ? {
-			counter: this.counter,
-			location: this.location
-		} : null;
+		// Load current and previous data from storage
+		const currentData = await this.ctx.storage.get<StoredData>('current');
+		const previousData = await this.ctx.storage.get<StoredData>('previous');
 
-		// Update counter (Fibonacci)
-		var tmp = this.counter;
-		this.counter = this.previous_counter + this.counter;
-		this.previous_counter = tmp;
+		// Initialize counters if first run
+		let previous_counter = 1;
+		let counter = 2;
 		
-		// Update location
-		this.previousLocation = this.location;
-		this.location = locationInfo;
-		
+		if (currentData) {
+			// Calculate next Fibonacci number
+			previous_counter = currentData.counter;
+			const prevCounter = previousData?.counter || 1;
+			counter = prevCounter + currentData.counter;
+		}
+
+		// Prepare new current data
+		const newCurrentData: StoredData = {
+			counter: counter,
+			location: locationInfo,
+			timestamp: Date.now()
+		};
+
+		// Store previous data (what was current)
+		if (currentData) {
+			await this.ctx.storage.put('previous', currentData);
+		}
+
+		// Store new current data
+		await this.ctx.storage.put('current', newCurrentData);
+
 		return {
-			current: {
-				counter: this.counter,
-				location: this.location
-			},
-			previous: previousData
+			current: newCurrentData,
+			previous: currentData || null
 		};
 	}
 }

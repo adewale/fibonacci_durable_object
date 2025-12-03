@@ -3,27 +3,485 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Hello, World!</title>
+		<title>Fibonacci Counter - Durable Object</title>
+		<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+		<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+
+			body {
+				font-family: 'Hoefler Text', 'Baskerville Old Face', Garamond, 'Times New Roman', serif;
+				background: linear-gradient(to bottom, #fafaf8 0%, #f5f5f0 100%);
+				min-height: 100vh;
+				padding: 30px 20px;
+				color: #1a1a1a;
+				line-height: 1.6;
+				font-size: 17px;
+			}
+
+			.container {
+				max-width: 800px;
+				margin: 0 auto;
+			}
+
+			.counter-section {
+				text-align: center;
+				margin-bottom: 35px;
+				border-bottom: 2px solid transparent;
+				border-image: linear-gradient(to right, transparent, #d0d0d0 20%, #8b0000 50%, #d0d0d0 80%, transparent) 1;
+				padding-bottom: 30px;
+				position: relative;
+			}
+
+			.counter-section::before {
+				content: '§';
+				position: absolute;
+				top: -10px;
+				left: 50%;
+				transform: translateX(-50%);
+				font-size: 1.5rem;
+				color: #8b0000;
+				background: #fafaf8;
+				padding: 0 15px;
+			}
+
+			.counter-display {
+				font-size: 5.5rem;
+				font-weight: 300;
+				margin: 20px 0 15px 0;
+				color: #8b0000;
+				letter-spacing: -0.02em;
+				animation: fadeInScale 0.6s ease-out;
+				font-variant-numeric: oldstyle-nums;
+				text-shadow: 0 1px 2px rgba(139, 0, 0, 0.1);
+				transition: transform 0.3s ease;
+			}
+
+			.counter-display:hover {
+				transform: scale(1.05);
+			}
+
+			@keyframes fadeInScale {
+				0% {
+					opacity: 0;
+					transform: scale(0.8);
+				}
+				100% {
+					opacity: 1;
+					transform: scale(1);
+				}
+			}
+
+			.counter-number {
+				display: inline-block;
+				animation: morphNumber 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+			}
+
+			@keyframes morphNumber {
+				0% {
+					transform: scale(0.5) rotateY(90deg);
+					opacity: 0;
+				}
+				50% {
+					transform: scale(1.2) rotateY(0deg);
+				}
+				100% {
+					transform: scale(1) rotateY(0deg);
+					opacity: 1;
+				}
+			}
+
+			.location-badge {
+				display: inline-block;
+				background: linear-gradient(to right, transparent, rgba(139, 0, 0, 0.03), transparent);
+				padding: 8px 20px;
+				margin: 8px;
+				color: #555;
+				font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+				font-size: 0.8em;
+				letter-spacing: 0.03em;
+				animation: slideIn 0.5s ease-out;
+				border-left: 2px solid #8b0000;
+				border-right: 2px solid #8b0000;
+				transition: all 0.3s ease;
+			}
+
+			.location-badge:hover {
+				background: linear-gradient(to right, transparent, rgba(139, 0, 0, 0.05), transparent);
+				border-color: #c30;
+			}
+
+			@keyframes slideIn {
+				from {
+					transform: translateY(-20px);
+					opacity: 0;
+				}
+				to {
+					transform: translateY(0);
+					opacity: 1;
+				}
+			}
+
+			.info-card {
+				background: #fff;
+				border-top: 1px solid #e5e5e5;
+				border-bottom: 1px solid #e5e5e5;
+				padding: 25px 0;
+				margin: 30px 0;
+				animation: fadeIn 0.8s ease-out;
+			}
+
+			@keyframes fadeIn {
+				from {
+					opacity: 0;
+				}
+				to {
+					opacity: 1;
+				}
+			}
+
+			.previous-section {
+				margin-top: 20px;
+				font-size: 0.85em;
+				color: #555;
+				font-style: italic;
+			}
+
+			.stats-grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+				gap: 0;
+				margin: 20px 0;
+			}
+
+			.stat-item {
+				background: transparent;
+				border: none;
+				border-left: 2px solid #e5e5e5;
+				padding: 12px 20px;
+				text-align: left;
+				transition: all 0.3s ease;
+				position: relative;
+			}
+
+			.stat-item::before {
+				content: '';
+				position: absolute;
+				left: 0;
+				top: 0;
+				bottom: 0;
+				width: 0;
+				background: linear-gradient(to right, rgba(139, 0, 0, 0.05), transparent);
+				transition: width 0.3s ease;
+			}
+
+			.stat-item:hover {
+				border-left-color: #8b0000;
+			}
+
+			.stat-item:hover::before {
+				width: 100%;
+			}
+
+			.stat-label {
+				font-size: 0.65em;
+				color: #888;
+				text-transform: uppercase;
+				letter-spacing: 0.1em;
+				margin-bottom: 6px;
+				font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;
+				font-weight: 600;
+			}
+
+			.stat-value {
+				font-size: 1.6em;
+				font-weight: 300;
+				color: #1a1a1a;
+				font-variant-numeric: lining-nums;
+				transition: color 0.3s ease;
+				position: relative;
+				z-index: 1;
+			}
+
+			.stat-item:hover .stat-value {
+				color: #8b0000;
+			}
+
+			#map {
+				height: 350px;
+				border: 1px solid #e0e0e0;
+				margin: 20px 0 15px 0;
+				animation: fadeIn 1s ease-out;
+				box-shadow: 0 2px 8px rgba(139, 0, 0, 0.08);
+				transition: box-shadow 0.3s ease;
+			}
+
+			#map:hover {
+				box-shadow: 0 4px 12px rgba(139, 0, 0, 0.12);
+			}
+
+			h1 {
+				font-size: 2.2rem;
+				font-weight: 300;
+				margin-bottom: 10px;
+				color: #1a1a1a;
+				letter-spacing: -0.01em;
+				animation: slideIn 0.5s ease-out;
+				position: relative;
+				display: inline-block;
+			}
+
+			h1::after {
+				content: '';
+				position: absolute;
+				bottom: -5px;
+				left: 0;
+				right: 0;
+				height: 1px;
+				background: linear-gradient(to right, transparent, #8b0000, transparent);
+				opacity: 0.3;
+			}
+
+			h2 {
+				font-size: 1.3rem;
+				font-weight: 300;
+				margin: 0 0 20px 0;
+				color: #1a1a1a;
+				letter-spacing: 0.01em;
+				position: relative;
+				padding-left: 15px;
+			}
+
+			h2::before {
+				content: '❡';
+				position: absolute;
+				left: 0;
+				color: #8b0000;
+				font-size: 0.8em;
+			}
+
+			.distance-line {
+				background: linear-gradient(to right, transparent, rgba(139, 0, 0, 0.02), transparent);
+				border: none;
+				border-top: 1px solid #d0d0d0;
+				border-bottom: 1px solid #d0d0d0;
+				padding: 8px 20px;
+				margin: 10px 0;
+				display: inline-block;
+				color: #555;
+				font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;
+				font-size: 0.85em;
+				letter-spacing: 0.02em;
+				position: relative;
+			}
+
+			.distance-line::before,
+			.distance-line::after {
+				content: '⟡';
+				position: absolute;
+				color: #8b0000;
+				font-size: 0.7em;
+				top: 50%;
+				transform: translateY(-50%);
+			}
+
+			.distance-line::before {
+				left: 5px;
+			}
+
+			.distance-line::after {
+				right: 5px;
+			}
+		</style>
 	</head>
 	<body>
-		<h1 id="current"></h1>
-		<p id="previous" style="font-size: 0.8em; color: #666;"></p>
+		<div class="container">
+			<div class="counter-section">
+				<h1>Fibonacci Durable Object</h1>
+				<div class="counter-display">
+					<span id="counter-number" class="counter-number">0</span>
+				</div>
+				<div>
+					<div class="location-badge" id="current-location">Loading...</div>
+				</div>
+			</div>
+
+			<div class="info-card">
+				<div class="stats-grid">
+					<div class="stat-item">
+						<div class="stat-label">Time Since Last Visit</div>
+						<div class="stat-value" id="time-since">-</div>
+					</div>
+					<div class="stat-item">
+						<div class="stat-label">Distance Traveled</div>
+						<div class="stat-value" id="distance">-</div>
+					</div>
+					<div class="stat-item">
+						<div class="stat-label">Current Data Center</div>
+						<div class="stat-value" id="colo">-</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="info-card">
+				<h2>Location Map</h2>
+				<div id="map"></div>
+				<div id="map-info" style="text-align: center; margin-top: 10px;"></div>
+			</div>
+
+			<div class="info-card previous-section">
+				<h2>Previous Visit</h2>
+				<div id="previous-info">No previous data</div>
+			</div>
+		</div>
+
 		<script>
+			// Calculate distance between two coordinates using Haversine formula
+			function calculateDistance(lat1, lon1, lat2, lon2) {
+				const R = 6371; // Earth's radius in km
+				const dLat = (lat2 - lat1) * Math.PI / 180;
+				const dLon = (lon2 - lon1) * Math.PI / 180;
+				const a = 
+					Math.sin(dLat/2) * Math.sin(dLat/2) +
+					Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+					Math.sin(dLon/2) * Math.sin(dLon/2);
+				const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+				return R * c;
+			}
+
+			// Format time difference
+			function formatTimeSince(timestamp) {
+				const diff = Date.now() - timestamp;
+				const seconds = Math.floor(diff / 1000);
+				const minutes = Math.floor(seconds / 60);
+				const hours = Math.floor(minutes / 60);
+				const days = Math.floor(hours / 24);
+
+				if (days > 0) return `${days}d ${hours % 24}h`;
+				if (hours > 0) return `${hours}h ${minutes % 60}m`;
+				if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
+				return `${seconds}s`;
+			}
+
 			fetch('/message')
 				.then((resp) => resp.json())
 				.then((data) => {
-					const currentEl = document.getElementById('current');
-					const previousEl = document.getElementById('previous');
-					
-					// Display current counter and location
-					currentEl.textContent = `Counter: ${data.current.counter} | Location: ${data.current.location.city}, ${data.current.location.region}, ${data.current.location.country}`;
-					
-					// Display previous counter and location if available
+					console.log('Data received:', data);
+
+					// Animate counter with morphing effect
+					const counterEl = document.getElementById('counter-number');
+					counterEl.textContent = data.current.counter;
+					counterEl.style.animation = 'none';
+					setTimeout(() => {
+						counterEl.style.animation = 'morphNumber 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+					}, 10);
+
+					// Display current location
+					const currentLoc = data.current.location;
+					document.getElementById('current-location').textContent = 
+						`${currentLoc.city}, ${currentLoc.region}, ${currentLoc.country}`;
+
+					// Display data center
+					document.getElementById('colo').textContent = currentLoc.colo;
+
+					// Process previous data if available
 					if (data.previous) {
-						previousEl.textContent = `Previous - Counter: ${data.previous.counter} | Location: ${data.previous.location.city}, ${data.previous.location.region}, ${data.previous.location.country}`;
+						const prevLoc = data.previous.location;
+						
+						// Calculate time since last visit
+						const timeSince = formatTimeSince(data.previous.timestamp);
+						document.getElementById('time-since').textContent = timeSince;
+
+						// Calculate distance if coordinates are available
+						const currentLat = parseFloat(currentLoc.latitude);
+						const currentLon = parseFloat(currentLoc.longitude);
+						const prevLat = parseFloat(prevLoc.latitude);
+						const prevLon = parseFloat(prevLoc.longitude);
+
+						if (!isNaN(currentLat) && !isNaN(currentLon) && !isNaN(prevLat) && !isNaN(prevLon)) {
+							const distance = calculateDistance(prevLat, prevLon, currentLat, currentLon);
+							document.getElementById('distance').textContent = 
+								distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`;
+
+							// Initialize map
+							const map = L.map('map').setView([currentLat, currentLon], 4);
+							
+							L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+								attribution: '© OpenStreetMap contributors'
+							}).addTo(map);
+
+							// Add markers
+							const currentMarker = L.marker([currentLat, currentLon])
+								.addTo(map)
+								.bindPopup(`<b>Current Location</b><br>${currentLoc.city}, ${currentLoc.region}`);
+
+							const prevMarker = L.marker([prevLat, prevLon])
+								.addTo(map)
+								.bindPopup(`<b>Previous Location</b><br>${prevLoc.city}, ${prevLoc.region}`);
+
+							// Draw line between locations
+							const line = L.polyline([[prevLat, prevLon], [currentLat, currentLon]], {
+								color: 'rgba(255, 255, 255, 0.8)',
+								weight: 3,
+								dashArray: '10, 10'
+							}).addTo(map);
+
+							// Fit map to show both markers
+							map.fitBounds(line.getBounds(), { padding: [50, 50] });
+
+							document.getElementById('map-info').innerHTML = 
+								`<div class="distance-line">Journey: ${distance.toFixed(1)}km</div>`;
+						} else {
+							document.getElementById('distance').textContent = 'Unknown';
+							document.getElementById('map').innerHTML = 
+								'<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: rgba(255,255,255,0.6);">Location coordinates not available</div>';
+						}
+
+						// Display previous visit info
+						document.getElementById('previous-info').innerHTML = `
+							<div style="margin: 10px 0;">
+								<strong>Counter:</strong> ${data.previous.counter}
+							</div>
+							<div style="margin: 10px 0;">
+								<strong>Location:</strong> ${prevLoc.city}, ${prevLoc.region}, ${prevLoc.country}
+							</div>
+							<div style="margin: 10px 0;">
+								<strong>Time:</strong> ${new Date(data.previous.timestamp).toLocaleString()}
+							</div>
+						`;
 					} else {
-						previousEl.textContent = 'No previous data';
+						document.getElementById('time-since').textContent = 'First visit';
+						document.getElementById('distance').textContent = 'N/A';
+						
+						// Show only current location on map
+						const currentLat = parseFloat(currentLoc.latitude);
+						const currentLon = parseFloat(currentLoc.longitude);
+
+						if (!isNaN(currentLat) && !isNaN(currentLon)) {
+							const map = L.map('map').setView([currentLat, currentLon], 8);
+							
+							L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+								attribution: '© OpenStreetMap contributors'
+							}).addTo(map);
+
+							L.marker([currentLat, currentLon])
+								.addTo(map)
+								.bindPopup(`<b>Current Location</b><br>${currentLoc.city}, ${currentLoc.region}`)
+								.openPopup();
+						} else {
+							document.getElementById('map').innerHTML = 
+								'<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: rgba(255,255,255,0.6);">Location coordinates not available</div>';
+						}
 					}
+				})
+				.catch(err => {
+					console.error('Error fetching data:', err);
+					document.getElementById('counter-number').textContent = 'Error';
+					document.getElementById('current-location').textContent = 'Failed to load data';
 				});
 		</script>
 	</body>

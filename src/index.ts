@@ -60,12 +60,10 @@ export class FibonacciDurableObject extends DurableObject {
 		const previousData = await this.ctx.storage.get<StoredData>('previous');
 
 		// Initialize counters if first run
-		let previous_counter = 1;
 		let counter = 2;
 		
 		if (currentData) {
 			// Calculate next Fibonacci number
-			previous_counter = currentData.counter;
 			const prevCounter = previousData?.counter || 1;
 			counter = prevCounter + currentData.counter;
 		}
@@ -98,10 +96,9 @@ export default {
 	 *
 	 * @param request - The request submitted to the Worker from the client
 	 * @param env - The interface to reference bindings declared in wrangler.jsonc
-	 * @param ctx - The execution context of the Worker
 	 * @returns The response to be sent back to the client
 	 */
-	async fetch(request, env, ctx): Promise<Response> {
+	async fetch(request, env): Promise<Response> {
 		const url = new URL(request.url);
 		
 		// Extract location information from Cloudflare's cf object

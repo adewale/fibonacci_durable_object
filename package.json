@@ -21,7 +21,8 @@
 		"deploy": "wrangler deploy",
 		"dev": "wrangler dev",
 		"start": "wrangler dev",
-		"cf-typegen": "wrangler types"
+		"cf-typegen": "wrangler types",
+		"check": "wrangler types && tsc --noEmit && wrangler deploy --dry-run"
 	},
 	"devDependencies": {
 		"typescript": "^5.5.2",

@@ -1,3 +1,6 @@
 Simple Durable Object demo.
 
 The idea is that this demonstrates something very simple that you can do with a Durable Object.
+
+There are no tests. `npm run check` regenerates the Worker types, type-checks
+the code and bundles it without deploying (`wrangler deploy --dry-run`).
